@@ -1,5 +1,5 @@
+import { AlexaAPI, ApiCallOptions } from './AlexaAPI';
 import { ApiError } from './ApiError';
-import { AlexaAPI } from './AlexaAPI';
 
 export interface HouseholdListStatusMap {
   href: string;
@@ -48,18 +48,14 @@ export class AlexaList {
    * @param {'active'|'completed'} listState
    * @return {Promise}
    */
-  async getList(name: string, listState = 'active') {
-    try {
-      const lists: HouseholdLists = (await this.getHouseHoldLists()) as HouseholdLists;
-      for (const list of lists.lists) {
-        if (list.name === name && list.state === listState) {
-          return await this.getListAPI(`${list.listId}/${list.state}`);
-        }
+  async getList(name: string, listState = 'active'): Promise<HouseholdList> {
+    const lists: HouseholdLists = await this.getHouseHoldLists();
+    for (const list of lists.lists) {
+      if (list.name === name && list.state === listState) {
+        return this.getListAPI<HouseholdList>(`${list.listId}/${list.state}`);
       }
-      return Promise.resolve({});
-    } catch (e) {
-      return Promise.reject(e);
     }
+    throw new ApiError('No list with this name and state was found.');
   }
 
   /**
@@ -70,8 +66,13 @@ export class AlexaList {
    * @return {Promise}
    */
   async addToList(listName: string, value: string, status = 'active') {
-    const list = (await this.getList(listName)) as HouseholdList;
-    return await this.createListItemAPI(list.listId, {
+    const list = await this.getList(listName);
+
+    if (!list) {
+      throw new ApiError('No list with this name was found.', ApiError.LIST_NOT_FOUND);
+    }
+
+    return this.createListItemAPI(list.listId, {
       value,
       status,
     });
@@ -87,7 +88,11 @@ export class AlexaList {
    * @return {*}
    */
   async updateList(listName: string, oldValue: string, newValue: string, newStatus: string) {
-    const list = (await this.getList(listName)) as HouseholdList;
+    const list = await this.getList(listName);
+
+    if (!list) {
+      throw new ApiError('No list with this name was found.', ApiError.LIST_NOT_FOUND);
+    }
 
     for (const listItem of list.items || []) {
       if (listItem.value.toLowerCase() === oldValue.toLowerCase()) {
@@ -99,86 +104,56 @@ export class AlexaList {
         });
       }
     }
-    return Promise.reject(new ApiError('No items with this value found.', ApiError.ITEM_NOT_FOUND));
+    throw new ApiError('No items with this value found.', ApiError.ITEM_NOT_FOUND);
   }
 
   async deleteListItem(listName: string, value: string, listState = 'active') {
-    const list = (await this.getList(listName, listState)) as HouseholdList;
+    const list = await this.getList(listName, listState);
+
+    if (!list) {
+      throw new ApiError('No list with this name was found.', ApiError.LIST_NOT_FOUND);
+    }
 
     for (const listItem of list.items || []) {
       if (listItem.value.toLowerCase() === value.toLowerCase() && listItem.id) {
         return this.deleteListItemAPI(list.listId, listItem.id);
       }
     }
-    return Promise.reject(new ApiError('No items with this value found.', ApiError.ITEM_NOT_FOUND));
+    throw new ApiError('No items with this value found.', ApiError.ITEM_NOT_FOUND);
   }
 
   /**
    * Return all household lists
    * @return {*}
    */
-  getHouseHoldLists() {
-    return this.getListAPI();
+  getHouseHoldLists(): Promise<HouseholdLists> {
+    return this.getListAPI<HouseholdLists>();
   }
 
-  async deleteListItemAPI(listId: string, itemId: string) {
-    const options = {
+  deleteListItemAPI(listId: string, itemId: string) {
+    const options: ApiCallOptions = {
       endpoint: this.apiEndpoint,
       path: `/v2/householdlists/${listId}/items/${itemId}`,
       method: 'DELETE',
       permissionToken: this.apiAccessToken,
     };
 
-    try {
-      const response: any = await AlexaAPI.apiCall(options); // tslint:disable-line
-      if (response.httpStatus === 403) {
-        const apiError = new ApiError(response.data.message, response.data.code);
-        if (response.data.Message === 'Not all permissions are authorized.') {
-          apiError.code = ApiError.NO_USER_PERMISSION; // user needs to grant access in app
-        }
-        if (response.data.Message === 'Request is not authorized.') {
-          apiError.code = ApiError.NO_USER_PERMISSION; // user needs to grant access in app
-        }
-        return Promise.reject(apiError);
-      }
-      return Promise.resolve(response.data);
-    } catch (e) {
-      return Promise.reject(
-        new ApiError(e.message || 'Something went wrong.', e.code || ApiError.ERROR),
-      );
-    }
+    return this.handleApiCall(options);
   }
 
-  async getListAPI(path = '') {
-    // tslint:disable-next-line
-    const options: any = {
+  // tslint:disable-next-line
+  getListAPI<V = any>(path = ''): Promise<V> {
+    const options: ApiCallOptions = {
       endpoint: this.apiEndpoint,
       path: `/v2/householdlists/${path}`,
       permissionToken: this.apiAccessToken,
     };
 
-    try {
-      const response: any = await AlexaAPI.apiCall(options); // tslint:disable-line
-      if (response.httpStatus === 403) {
-        const apiError = new ApiError(response.data.message, response.data.code);
-        if (response.data.Message === 'Not all permissions are authorized.') {
-          apiError.code = ApiError.NO_USER_PERMISSION; // user needs to grant access in app
-        }
-        if (response.data.Message === 'Request is not authorized.') {
-          apiError.code = ApiError.NO_USER_PERMISSION; // user needs to grant access in app
-        }
-        return Promise.reject(apiError);
-      }
-      return Promise.resolve(response.data);
-    } catch (e) {
-      return Promise.reject(
-        new ApiError(e.message || 'Something went wrong.', e.code || ApiError.ERROR),
-      );
-    }
+    return this.handleApiCall(options);
   }
 
   async createListItemAPI(listId: string, householdListItem: HouseholdListItem) {
-    const options = {
+    const options: ApiCallOptions = {
       endpoint: this.apiEndpoint,
       path: `/v2/householdlists/${listId}/items`,
       method: 'POST',
@@ -186,29 +161,11 @@ export class AlexaList {
       permissionToken: this.apiAccessToken,
     };
 
-    try {
-      const response: any = await AlexaAPI.apiCall(options); // tslint:disable-line
-
-      if (response.httpStatus === 403) {
-        const apiError = new ApiError(response.data.message, response.data.code);
-        if (response.data.Message === 'Not all permissions are authorized.') {
-          apiError.code = ApiError.NO_USER_PERMISSION; // user needs to grant access in app
-        }
-        if (response.data.Message === 'Request is not authorized.') {
-          apiError.code = ApiError.NO_USER_PERMISSION; // user needs to grant access in app
-        }
-        return Promise.reject(apiError);
-      }
-      return Promise.resolve(response.data);
-    } catch (e) {
-      return Promise.reject(
-        new ApiError(e.message || 'Something went wrong.', e.code || ApiError.ERROR),
-      );
-    }
+    return this.handleApiCall(options);
   }
 
   async updateListItemAPI(listId: string, householdListItem: HouseholdListItem) {
-    const options = {
+    const options: ApiCallOptions = {
       endpoint: this.apiEndpoint,
       path: `/v2/householdlists/${listId}/items/${householdListItem.id}`,
       method: 'PUT',
@@ -216,23 +173,26 @@ export class AlexaList {
       permissionToken: this.apiAccessToken,
     };
 
+    return this.handleApiCall(options);
+  }
+
+  private async handleApiCall(options: ApiCallOptions) {
     try {
-      const response: any = await AlexaAPI.apiCall(options); // tslint:disable-line
-      if (response.httpStatus === 403) {
-        const apiError = new ApiError(response.data.message, response.data.code);
-        if (response.data.Message === 'Not all permissions are authorized.') {
+      const response = await AlexaAPI.apiCall(options);
+      if (response.status === 403) {
+        const { message, code } = response.data;
+        const apiError = new ApiError(message, code);
+        if (message === 'Not all permissions are authorized.') {
           apiError.code = ApiError.NO_USER_PERMISSION; // user needs to grant access in app
         }
-        if (response.data.Message === 'Request is not authorized.') {
+        if (message === 'Request is not authorized.') {
           apiError.code = ApiError.NO_USER_PERMISSION; // user needs to grant access in app
         }
         return Promise.reject(apiError);
       }
-      return Promise.resolve(response.data);
+      return response.data;
     } catch (e) {
-      return Promise.reject(
-        new ApiError(e.message || 'Something went wrong.', e.code || ApiError.ERROR),
-      );
+      throw new ApiError(e.message || 'Something went wrong.', e.code || ApiError.ERROR);
     }
   }
 }

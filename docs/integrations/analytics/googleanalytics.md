@@ -11,8 +11,8 @@ Learn how to use Google Analytics for your Jovo application.
     * [Intent Data Tracking](#intent-data-tracking)
     * [User Id](#user-id)
     * [Data Source](#data-source)
-    * [Device Info & Screen Resolution](#device-info--screen-resolution)
-    * [Custom Dimensions & Custom Metrics](#custom-dimensions--custom-metrics)
+    * [Device Info and Screen Resolution](#device-info-and-screen-resolution)
+    * [Custom Dimensions and Custom Metrics](#custom-dimensions-and-custom-metrics)
         * [Custom Dimensions](#custom-dimensions)
         * [Custom Metrics](#custom-metrics)
     * [Custom Reports](#custom-reports)
@@ -35,7 +35,7 @@ To use Google Analytics for your voice app, you need to complete the following s
 
 1. Create a Google Analytics Account
 2. Enable Google Analytics in your Jovo app
-4. Check Your App
+3. Check Your App
 
 ### Create a Google Analytics Account
 
@@ -43,7 +43,7 @@ To use Google Analytics for your voice app, you need to complete the following s
 
 2. Click "Set up for free" and fill in the form depending on your needs for your account. Select "Web" on your type of measurement. For property details, you can use the Jovo application name as the Website Name, and a placeholder for the Website URL.
 
-![Botanalytics Add a New Bot](../../img/google-analytics-start.png)
+![Google Analytics Add a New Bot](../../img/google-analytics-start.png)
 
 3. After clicking "Create" and confirming the terms of service, you will arrive at the admin section of your Google Analytics Account. Copy the Tracking ID which you will need to connect your Jovo app.
 
@@ -187,11 +187,11 @@ All data is stored under a hashed user id generated from the according platform 
 
 The data source describes the platform your users operate on. To display data for this metric, you need to create a [Custom Report](#custom-reports).
 
-### Device Info & Screen Resolution
+### Device Info and Screen Resolution
 
 Device Info and Screen Resolution can be found under "Audience" > "Technology" > "Browser&OS".
 
-### Custom Dimensions & Custom Metrics
+### Custom Dimensions and Custom Metrics
 
 In Google Analytics, all data is captured under certain dimensions and metrics. You can think of dimensions as data attributes, for example the userId or the intent name. Metrics on the other hand are values that can be measured, for example the total number of sessions a user had. Custom dimensions and custom metrics work the same way. You can use them to capture data that otherwise wouldn't be captured. To create either, go to "Admin" > "Custom Definitions".
 

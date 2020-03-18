@@ -1,4 +1,5 @@
-import i18n from 'i18next';
+import * as i18n from 'i18next';
+
 import { BaseApp, Cms, HandleRequest } from 'jovo-core';
 import _cloneDeep = require('lodash.clonedeep');
 
@@ -42,7 +43,6 @@ describe('ResponsesSheet.install()', () => {
     const googleSheetsCMS = new GoogleSheetsCMS();
     const responsesSheet = new ResponsesSheet();
 
-    expect(new Cms().t).toBeUndefined();
     responsesSheet.install(googleSheetsCMS);
     expect(new Cms().t).toBeInstanceOf(Function);
   });
@@ -132,7 +132,7 @@ describe('ResponsesSheet.parse()', () => {
     const responsesSheet = new ResponsesSheet({
       name: 'test',
     });
-
+    // @ts-ignore
     i18n.init({
       interpolation: {
         escapeValue: false,

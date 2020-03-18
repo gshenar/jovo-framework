@@ -1,12 +1,12 @@
-import { BaseApp, Jovo, SpeechBuilder, Host, HandleRequest } from 'jovo-core';
-import _get = require('lodash.get');
-const _sample = require('lodash.sample');
-
-import { GoogleActionUser } from './GoogleActionUser';
-import { GoogleActionSpeechBuilder } from './GoogleActionSpeechBuilder';
+import { AudioData, BaseApp, HandleRequest, Host, Jovo, SpeechBuilder } from 'jovo-core';
+import { DialogflowRequest } from 'jovo-platform-dialogflow';
 import { EnumGoogleAssistantRequestType } from './google-assistant-enums';
 import { GoogleActionRequest } from './GoogleActionRequest';
-import { DialogflowRequest } from 'jovo-platform-dialogflow';
+import { GoogleActionSpeechBuilder } from './GoogleActionSpeechBuilder';
+import { GoogleActionUser } from './GoogleActionUser';
+import _get = require('lodash.get');
+
+const _sample = require('lodash.sample');
 
 type reprompt = string | SpeechBuilder;
 
@@ -249,6 +249,15 @@ export class GoogleAction extends Jovo {
     );
   }
 
+  /**
+   * Returns audio data of request.
+   * Not supported by this platform.
+   * @return {undefined}
+   */
+  getAudioData(): AudioData | undefined {
+    return undefined;
+  }
+
   isInSandbox() {
     return _get(this.$originalRequest || this.$request, 'isInSandbox', false);
   }
@@ -294,15 +303,6 @@ export class GoogleAction extends Jovo {
     return _get(this.$request, 'queryResult.outputContexts', []).find((context: any) => {
       return context.name.indexOf(`/contexts/${name}`) > -1;
     });
-  }
-
-  /**
-   * Returns true if user is not voice matched
-   * @return {string}
-   */
-  isVoiceMatchedUser() {
-    // TODO
-    // return _.isNumber(parseInt(this.getUserId()));
   }
 
   /**

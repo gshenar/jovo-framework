@@ -1,53 +1,33 @@
 import {
-  ActionSet,
+  AxiosRequestConfig,
   BaseApp,
   ErrorCode,
-  Extensible,
   ExtensibleConfig,
   HandleRequest,
   Host,
+  HttpService,
   Jovo,
   JovoError,
+  Log,
   Platform,
-  RequestBuilder,
-  ResponseBuilder,
   TestSuite,
+  AxiosError,
+  AxiosResponse,
 } from 'jovo-core';
 import _get = require('lodash.get');
 import _merge = require('lodash.merge');
 import _set = require('lodash.set');
 import {
-  AirlineTemplate,
-  AirlineTemplateOptions,
-  AirlineTemplatePayload,
-  AttachmentMessage,
-  AttachmentMessageOptions,
   BASE_PATH,
-  ButtonTemplate,
-  ButtonTemplateOptions,
-  ButtonTemplatePayload,
+  BASE_URL,
   FacebookMessengerCore,
   FacebookMessengerRequestBuilder,
   FacebookMessengerResponseBuilder,
-  GenericTemplate,
-  GenericTemplateOptions,
-  GenericTemplatePayload,
-  HOST,
-  HTTPS,
-  MediaTemplate,
-  MediaTemplateOptions,
-  MediaTemplatePayload,
   Message,
   MessengerBot,
   MessengerBotEntry,
-  ReceiptTemplate,
-  ReceiptTemplateOptions,
-  ReceiptTemplatePayload,
-  SenderAction,
-  SenderActionType,
-  TemplateType,
-  TextMessage,
-  TextMessageOptions,
+  MessengerBotRequest,
+  MessengerBotResponse,
 } from '.';
 
 export interface UpdateConfig<T> {
@@ -69,7 +49,7 @@ export interface Config extends ExtensibleConfig {
   locale?: string;
 }
 
-export class FacebookMessenger extends Extensible implements Platform {
+export class FacebookMessenger extends Platform<MessengerBotRequest, MessengerBotResponse> {
   requestBuilder: FacebookMessengerRequestBuilder = new FacebookMessengerRequestBuilder();
   responseBuilder: FacebookMessengerResponseBuilder = new FacebookMessengerResponseBuilder();
 
@@ -92,23 +72,6 @@ export class FacebookMessenger extends Extensible implements Platform {
     if (config) {
       this.config = _merge(this.config, config);
     }
-
-    this.actionSet = new ActionSet(
-      [
-        '$init',
-        '$request',
-        '$user',
-        '$type',
-        '$asr',
-        '$nlu',
-        '$inputs',
-        '$session',
-        '$tts',
-        '$output',
-        '$response',
-      ],
-      this,
-    );
   }
 
   getAppType(): string {
@@ -131,7 +94,16 @@ export class FacebookMessenger extends Extensible implements Platform {
 
     this.use(new FacebookMessengerCore());
 
-    this.augmentJovo();
+    Jovo.prototype.$messengerBot = undefined;
+    Jovo.prototype.messengerBot = function() {
+      if (this.constructor.name !== 'MessengerBot') {
+        throw Error(`Can't handle request. Please use this.isMessengerBot()`);
+      }
+      return this as MessengerBot;
+    };
+    Jovo.prototype.isMessengerBot = function() {
+      return this.constructor.name === 'MessengerBot';
+    };
 
     if (this.config.shouldOverrideAppHandle) {
       this.overrideAppHandle();
@@ -140,14 +112,7 @@ export class FacebookMessenger extends Extensible implements Platform {
 
   async setup(handleRequest: HandleRequest) {
     const path = `${BASE_PATH}/messenger_profile?access_token=${this.config.pageAccessToken}`;
-    const options = {
-      hostname: HOST,
-      path,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    };
+    const url = BASE_URL + path;
     const data: any = {};
 
     if (this.config.launch && this.config.launch.updateOnSetup) {
@@ -178,10 +143,21 @@ export class FacebookMessenger extends Extensible implements Platform {
       data.greeting = greetingElements;
     }
 
-    const json = JSON.stringify(data);
+    if (Object.keys(data).length === 0) {
+      return;
+    }
+
+    const config: AxiosRequestConfig = {
+      url,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      data,
+    };
 
     try {
-      await HTTPS.makeRequest(options, Buffer.from(json));
+      await HttpService.request(config);
     } catch (e) {
       throw new JovoError(e, ErrorCode.ERR_PLUGIN, 'FacebookMessenger');
     }
@@ -263,100 +239,22 @@ export class FacebookMessenger extends Extensible implements Platform {
     );
 
     for (const message of messages) {
-      message.send(pageAccessToken).catch((e) => {
-        throw new JovoError(e, ErrorCode.ERR_PLUGIN, 'FacebookMessenger');
-      });
+      message
+        .send(pageAccessToken)
+        .then((res: AxiosResponse<any>) => {
+          Log.debug(res.data);
+        })
+        .catch((e: AxiosError) => {
+          Log.error(`Error while sending message:\n${e}`);
+        });
     }
   }
 
-  makeTestSuite(): TestSuite<RequestBuilder, ResponseBuilder> {
+  makeTestSuite(): TestSuite<FacebookMessengerRequestBuilder, FacebookMessengerResponseBuilder> {
     return new TestSuite(
       new FacebookMessengerRequestBuilder(),
       new FacebookMessengerResponseBuilder(),
     );
-  }
-
-  private augmentJovo() {
-    Jovo.prototype.$messengerBot = undefined;
-    Jovo.prototype.messengerBot = function() {
-      if (this.constructor.name !== 'MessengerBot') {
-        throw Error(`Can't handle request. Please use this.isMessengerBot()`);
-      }
-      return this as MessengerBot;
-    };
-    Jovo.prototype.isMessengerBot = function() {
-      return this.constructor.name === 'MessengerBot';
-    };
-
-    Jovo.prototype.text = function(options: TextMessageOptions) {
-      const message = new TextMessage({ id: this.$user.getId()! }, options);
-      this.$output.FacebookMessenger.Messages.push(message);
-      return this;
-    };
-    Jovo.prototype.attachment = function(options: AttachmentMessageOptions) {
-      const message = new AttachmentMessage({ id: this.$user.getId()! }, options);
-      this.$output.FacebookMessenger.Messages.push(message);
-      return this;
-    };
-
-    Jovo.prototype.overrideText = function(text: string) {
-      this.$output.FacebookMessenger.OverrideText = text;
-      return this;
-    };
-
-    Jovo.prototype.airlineTemplate = function(options: AirlineTemplateOptions) {
-      const payload: AirlineTemplatePayload = {
-        ...options,
-        template_type: TemplateType.Airline,
-      };
-      const message = new AirlineTemplate({ id: this.$user.getId()! }, payload);
-      this.$output.FacebookMessenger.Messages.push(message);
-      return this;
-    };
-    Jovo.prototype.buttonTemplate = function(options: ButtonTemplateOptions) {
-      const payload: ButtonTemplatePayload = {
-        ...options,
-        template_type: TemplateType.Button,
-      };
-      const message = new ButtonTemplate({ id: this.$user.getId()! }, payload);
-      this.$output.FacebookMessenger.Messages.push(message);
-      return this;
-    };
-    Jovo.prototype.genericTemplate = function(options: GenericTemplateOptions) {
-      const payload: GenericTemplatePayload = {
-        ...options,
-        template_type: TemplateType.Generic,
-      };
-      const message = new GenericTemplate({ id: this.$user.getId()! }, payload);
-      this.$output.FacebookMessenger.Messages.push(message);
-      return this;
-    };
-    Jovo.prototype.mediaTemplate = function(options: MediaTemplateOptions) {
-      const payload: MediaTemplatePayload = {
-        ...options,
-        template_type: TemplateType.Media,
-      };
-      const message = new MediaTemplate({ id: this.$user.getId()! }, payload);
-      this.$output.FacebookMessenger.Messages.push(message);
-      return this;
-    };
-    Jovo.prototype.receiptTemplate = function(options: ReceiptTemplateOptions) {
-      const payload: ReceiptTemplatePayload = {
-        ...options,
-        template_type: TemplateType.Receipt,
-      };
-      const message = new ReceiptTemplate({ id: this.$user.getId()! }, payload);
-      this.$output.FacebookMessenger.Messages.push(message);
-      return this;
-    };
-
-    Jovo.prototype.action = async function(action: SenderActionType) {
-      const message = new SenderAction({ id: this.$user.getId()! }, action);
-
-      const pageAccessToken = _get(this.$config, 'plugin.FacebookMessenger.pageAccessToken', '');
-      const result = await message.send(pageAccessToken);
-      return !!result;
-    };
   }
 
   private overrideAppHandle() {

@@ -1,8 +1,9 @@
 import { LinkAccountCard } from './response/visuals/LinkAccountCard';
 import { Directive, DynamicEntityType } from './core/AlexaResponse';
+import { Config } from './Alexa';
 
 export { AlexaRequestBuilder } from './core/AlexaRequestBuilder';
-export { Alexa } from './Alexa';
+export { Alexa, Config } from './Alexa';
 export { AlexaSkill } from './core/AlexaSkill';
 export { AlexaTestSuite } from './core/Interfaces';
 export * from './core/AlexaRequest';
@@ -64,9 +65,10 @@ import { AlexaSpeechBuilder } from './core/AlexaSpeechBuilder';
 import { ProactiveEvent } from './modules/ProactiveEvent';
 
 import { Apl } from './modules/AplPlugin';
+import { EmotionName, EmotionIntensity } from './core/Interfaces';
 import { AmazonPay } from './modules/AmazonPay';
 
-declare module 'jovo-core/dist/src/Jovo' {
+declare module 'jovo-core/dist/src/core/Jovo' {
   export interface Jovo {
     $alexaSkill?: AlexaSkill;
     alexaSkill(): AlexaSkill;
@@ -74,7 +76,7 @@ declare module 'jovo-core/dist/src/Jovo' {
   }
 }
 
-declare module 'jovo-core/dist/src/BaseApp' {
+declare module 'jovo-core/dist/src/core/BaseApp' {
   interface BaseApp {
     /**
      * Sets alexa handlers
@@ -85,7 +87,7 @@ declare module 'jovo-core/dist/src/BaseApp' {
   }
 }
 
-declare module 'jovo-core/dist/src/SpeechBuilder' {
+declare module 'jovo-core/dist/src/util/SpeechBuilder' {
   interface SpeechBuilder {
     addLangText(
       language: string,
@@ -98,6 +100,14 @@ declare module 'jovo-core/dist/src/SpeechBuilder' {
       text: string | string[],
       condition?: boolean,
       probability?: number,
+    ): this;
+    addEmotion(
+      name: EmotionName,
+      intensity: EmotionIntensity,
+      text: string | string[],
+      condition?: boolean,
+      probability?: number,
+      surroundSsml?: SsmlElements,
     ): this;
   }
 }
@@ -233,119 +243,6 @@ declare module './core/AlexaSkill' {
     $dialog?: Dialog;
     dialog(): Dialog | undefined;
 
-    // deprecated v1 functions
-
-    /**
-     * Returns Intent Confirmation status
-     * @deprecated Please use this.$alexaSkill.$dialog.getIntentConfirmationStatus();
-     * @return {String}
-     */
-    getIntentConfirmationStatus(): string;
-
-    /**
-     * Returns state of dialog
-     * @deprecated Please use this.$alexaSkill.$dialog.getState();
-     * @return {String}
-     */
-    getDialogState(): string;
-
-    /**
-     * Returns true if dialog is in state COMPLETED
-     * @deprecated Please use this.$alexaSkill.$dialog.isCompleted();
-     * @return {String}
-     */
-    isDialogCompleted(): boolean;
-
-    /**
-     * Returns true if dialog is in state IN_PROGRESS
-     * @deprecated Please use this.$alexaSkill.$dialog.isInProgress();
-     * @return {String}
-     */
-    isDialogInProgress(): boolean;
-
-    /**
-     * Returns true if dialog is in state STARTED
-     * @deprecated Please use this.$alexaSkill.$dialog.isStarted();
-     * @return {String}
-     */
-    isDialogStarted(): boolean;
-
-    /**
-     * Returns if slot is confirmed
-     * @deprecated Please use this.$alexaSkill.$dialog.isSlotConfirmed();
-     * @return {boolean}
-     */
-    isSlotConfirmed(slotName: string): boolean;
-
-    /**
-     * Returns slot confirmation status
-     * @deprecated Please use this.$alexaSkill.$dialog.getSlotConfirmationStatus(slotName);
-     * @return {boolean}
-     */
-    getSlotConfirmationStatus(slotName: string): boolean;
-
-    /**
-     * Returns if slot is confirmed
-     * @deprecated Please use this.$alexaSkill.$dialog.hasSlotValue(slotName);
-     * @return {boolean}
-     */
-    hasSlotValue(slotName: string): boolean;
-
-    /**
-     * Creates delegate directive. Alexa handles next dialog
-     * step
-     * @deprecated Please use this.$alexaSkill.$dialog.delegate(updatedIntent);
-     * @param {Intent} updatedIntent
-     * @return {AlexaResponse}
-     */
-    dialogDelegate(updatedIntent?: Intent): AlexaSkill;
-
-    /**
-     * Let alexa ask user for the value of a specific slot
-     * @deprecated Please use this.$alexaSkill.$dialog.elicitSlot(slotToElicit, speech, reprompt, updatedIntent);
-     * @param {string} slotToElicit name of the slot
-     * @param {string} speech
-     * @param {string} reprompt
-     * @param {Intent} updatedIntent
-     * @return {AlexaSkill}
-     */
-    dialogElicitSlot(
-      slotToElicit: string,
-      speech: string | AlexaSpeechBuilder,
-      reprompt: string | AlexaSpeechBuilder,
-      updatedIntent?: Intent,
-    ): AlexaSkill;
-
-    /**
-     * Let alexa ask user to confirm slot with yes or no
-     * @public
-     * @param {string} slotToConfirm name of the slot
-     * @param {string} speech
-     * @param {string} reprompt
-     * @param {Intent} updatedIntent
-     * @return {AlexaSkill}
-     */
-    dialogConfirmSlot(
-      slotToConfirm: string,
-      speech: string | AlexaSpeechBuilder,
-      reprompt: string | AlexaSpeechBuilder,
-      updatedIntent?: Intent,
-    ): AlexaSkill;
-
-    /**
-     * Asks for intent confirmation
-     * @deprecated Please use this.$alexaSkill.$dialog.confirmIntent(speech, reprompt, updatedIntent);
-     * @param {string} speech
-     * @param {string} reprompt
-     * @param {Intent} updatedIntent
-     * @return {AlexaSkill}
-     */
-    dialogConfirmIntent(
-      speech: string | AlexaSpeechBuilder,
-      reprompt: string | AlexaSpeechBuilder,
-      updatedIntent?: Intent,
-    ): AlexaSkill;
-
     /**
      * Clears temporary dynamic entities
      */
@@ -356,6 +253,9 @@ declare module './core/AlexaSkill' {
      * @param dynamicEntityTypes
      */
     replaceDynamicEntities(dynamicEntityTypes: DynamicEntityType[]): this;
+
+    addDynamicEntityTypes(dynamicEntityTypes: DynamicEntityType[]): this;
+    addDynamicEntityType(dynamicEntityType: DynamicEntityType): this;
   }
 }
 // GadgetController
@@ -461,6 +361,10 @@ declare module './core/AlexaSkill' {
   }
 }
 
+interface AppAlexaConfig {
+  Alexa?: Config;
+}
+
 // Amazon Pay
 declare module './core/AlexaSkill' {
   interface AlexaSkill {
@@ -476,6 +380,9 @@ declare module 'jovo-core/dist/src/Interfaces' {
       AskForPermission?: AskForPermissionDirective;
     };
   }
+
+  interface AppPlatformConfig extends AppAlexaConfig {}
+  interface ExtensiblePluginConfigs extends AppAlexaConfig {}
 }
 
 export interface AskForPermissionDirective {

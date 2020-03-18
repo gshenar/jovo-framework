@@ -213,16 +213,15 @@ export class DialogflowRequest<T extends JovoRequest = JovoRequest> implements J
     });
 
     if (this.queryResult.outputContexts && this.queryResult.outputContexts.length > 0) {
-      // TODO: is the first element enough?
       const parameters = this.queryResult.outputContexts[0].parameters;
       for (const key in parameters) {
         if (inputs[key]) {
           const originalKey = key + '.original';
-          inputs[originalKey] = {
-            name: originalKey,
+          inputs[key] = {
+            name: parameters[key],
             value: parameters[originalKey],
-            key: parameters[originalKey],
-            id: parameters[originalKey],
+            key: parameters[key],
+            id: parameters[key],
           };
         }
       }

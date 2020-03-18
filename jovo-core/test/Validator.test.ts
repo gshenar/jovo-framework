@@ -4,7 +4,7 @@ import {
   ValidationError,
   Validator,
   ValidValuesValidator,
-} from '../src/validators';
+} from '../src';
 
 describe('ValidationError', () => {
   describe('ValidationError.constructor', () => {

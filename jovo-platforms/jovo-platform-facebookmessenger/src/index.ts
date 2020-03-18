@@ -1,50 +1,40 @@
 import { MessengerBot } from './core/MessengerBot';
-import { SenderActionType } from './Enums';
+import { Config } from './FacebookMessenger';
+import { QuickReply } from './Interfaces';
 import { Message } from './responses/Message';
-import { AttachmentMessageOptions } from './responses/messages/AttachmentMessage';
-import { TextMessageOptions } from './responses/messages/TextMessage';
-import { AirlineTemplateOptions } from './responses/templates/AirlineTemplate';
-import { ButtonTemplateOptions } from './responses/templates/ButtonTemplate';
-import { GenericTemplateOptions } from './responses/templates/GenericTemplate';
-import { MediaTemplateOptions } from './responses/templates/MediaTemplate';
-import { ReceiptTemplateOptions } from './responses/templates/ReceiptTemplate';
 
 export { FacebookMessenger, Config } from './FacebookMessenger';
 
-export const HOST = 'graph.facebook.com';
+export const BASE_URL = 'https://graph.facebook.com';
 export const BASE_PATH = '/v5.0/me';
 
-declare module 'jovo-core/dist/src/Jovo' {
+declare module 'jovo-core/dist/src/core/Jovo' {
   export interface Jovo {
     $messengerBot?: MessengerBot;
 
     messengerBot(): MessengerBot;
 
     isMessengerBot(): boolean;
-
-    // replaces text of ask / tell with the given text
-    overrideText(text: string): Jovo;
-
-    text(options: TextMessageOptions): Jovo;
-    attachment(options: AttachmentMessageOptions): Jovo;
-
-    airlineTemplate(options: AirlineTemplateOptions): Jovo;
-    buttonTemplate(options: ButtonTemplateOptions): Jovo;
-    genericTemplate(options: GenericTemplateOptions): Jovo;
-    mediaTemplate(options: MediaTemplateOptions): Jovo;
-    receiptTemplate(options: ReceiptTemplateOptions): Jovo;
-
-    action(action: SenderActionType): Promise<boolean>;
   }
+}
+
+interface AppFacebookMessengerConfig {
+  FacebookMessenger?: Config;
 }
 
 declare module 'jovo-core/dist/src/Interfaces' {
   export interface Output {
     FacebookMessenger: {
       Messages: Message[];
-      OverrideText?: string;
+      Overwrite?: {
+        Text?: string;
+        QuickReplies?: QuickReply[];
+      };
     };
   }
+
+  export interface AppPlatformConfig extends AppFacebookMessengerConfig {}
+  export interface ExtensiblePluginConfigs extends AppFacebookMessengerConfig {}
 }
 
 export * from './Interfaces';
@@ -56,8 +46,6 @@ export * from './core/MessengerBotSpeechBuilder';
 export * from './core/MessengerBotUser';
 export * from './core/FacebookMessengerRequestBuilder';
 export * from './core/FacebookMessengerResponseBuilder';
-
-export * from './helpers/HTTPS';
 
 export * from './modules/FacebookMessengerCore';
 

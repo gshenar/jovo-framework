@@ -1,14 +1,7 @@
-import {
-  ExtensibleConfig,
-  HandleRequest,
-  Jovo,
-  RequestBuilder,
-  ResponseBuilder,
-  SpeechBuilder,
-  TestSuite,
-} from './index';
-
-import { BaseApp } from './BaseApp';
+import { BaseAppConfig } from './core/BaseApp';
+import { HandleRequest } from './core/HandleRequest';
+import { Jovo } from './core/Jovo';
+import { SpeechBuilder } from './util/SpeechBuilder';
 
 export interface Data {
   [key: string]: any; // tslint:disable-line
@@ -59,24 +52,6 @@ export interface Db extends Plugin {
   delete(primaryKey: string, jovo?: Jovo): Promise<any>; // tslint:disable-line
 }
 
-export interface Platform extends Plugin {
-  requestBuilder?: RequestBuilder;
-  responseBuilder?: ResponseBuilder;
-
-  /**
-   * Returns the specific TestSuite implementation for this platform
-   */
-  makeTestSuite(): TestSuite;
-
-  /**
-   * Returns app type of platform.
-   * E.g. AlexaSkill, GoogleAction
-   */
-  getAppType(): string;
-}
-
-export interface PlatformConfig extends ExtensibleConfig, PluginConfig {}
-
 export interface Analytics extends Plugin {
   /**
    * Tracking method
@@ -93,11 +68,14 @@ export interface RequestType {
 
 export interface TellOutput {
   speech: string | SpeechBuilder;
+  speechText?: string;
 }
 
 export interface AskOutput {
   speech: string | SpeechBuilder;
   reprompt: string | SpeechBuilder | string[];
+  speechText?: string;
+  repromptText?: string;
 }
 
 export interface Output {
@@ -117,6 +95,7 @@ export interface Output {
     AccountLinkingCard?: object;
   };
 }
+
 export interface RequestJSON {}
 
 export interface JovoRequest {
@@ -485,21 +464,6 @@ export interface Host {
   fail(error: Error): void;
 }
 
-export interface ASRData {
-  text?: string;
-
-  [key: string]: any;
-}
-
-export interface NLUData {
-  intent?: {
-    name: string;
-  };
-  inputs?: Record<string, any>;
-
-  [key: string]: any;
-}
-
 export type HandlerReturnType = () =>
   | void
   | Promise<Function>
@@ -510,4 +474,33 @@ export type JovoFunction = (this: Jovo, jovo?: Jovo, done?: Function) => Handler
 
 export interface Handler {
   [key: string]: JovoFunction | Handler | Function;
+}
+
+export interface AppConfig extends BaseAppConfig {
+  analytics?: AppAnalyticsConfig;
+  platform?: AppPlatformConfig;
+  cms?: AppCmsConfig;
+  nlu?: AppNluConfig;
+  components?: AppComponentsConfig;
+}
+
+export interface AppAnalyticsConfig extends Record<string, any> {}
+
+export interface AppCmsConfig extends Record<string, any> {}
+
+export interface AppComponentsConfig extends Record<string, PluginConfig> {}
+
+export interface AppDbConfig extends Record<string, any> {}
+
+export interface AppNluConfig extends Record<string, any> {}
+
+export interface AppPlatformConfig extends Record<string, any> {}
+
+export interface ExtensiblePluginConfigs {
+  [key: string]: any;
+}
+
+export interface AudioData {
+  data: Float32Array;
+  sampleRate: number;
 }

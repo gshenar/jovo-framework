@@ -39,12 +39,9 @@ export class DialogInterface implements Plugin {
     };
 
     /**
-     * Replaces dynamic entities for the session
-     * @param dynamicEntityTypes
+     * Adds a given array of dynamic entity types to the output object.
      */
-    AlexaSkill.prototype.replaceDynamicEntities = function(
-      dynamicEntityTypes: DynamicEntityType[] | DynamicEntityType,
-    ) {
+    AlexaSkill.prototype.addDynamicEntityTypes = function(dynamicEntityTypes: DynamicEntityType[]) {
       if (!this.$output.Alexa) {
         this.$output.Alexa = {};
       }
@@ -53,10 +50,7 @@ export class DialogInterface implements Plugin {
         this.$output.Alexa.Directives = [];
       }
 
-      if (!Array.isArray(dynamicEntityTypes)) {
-        dynamicEntityTypes = [dynamicEntityTypes];
-      }
-
+      // ToDo: check for duplicity
       this.$output.Alexa.Directives.push({
         type: 'Dialog.UpdateDynamicEntities',
         updateBehavior: 'REPLACE',
@@ -65,142 +59,25 @@ export class DialogInterface implements Plugin {
       return this;
     };
 
-    // backwards compatibility deprecated methods
-
     /**
-     * Returns Intent Confirmation status
-     * @deprecated Please use this.$alexaSkill.$dialog.getIntentConfirmationStatus();
-     * @return {String}
+     * Adds a dynamic entity to the output object.
      */
-    AlexaSkill.prototype.getIntentConfirmationStatus = function() {
-      return this.$dialog!.getIntentConfirmationStatus();
+    AlexaSkill.prototype.addDynamicEntityType = function(dynamicEntityType: DynamicEntityType) {
+      return this.addDynamicEntityTypes([dynamicEntityType]);
     };
 
     /**
-     * Returns slot confirmation status
-     * @public
-     * @param {string} slotName
-     * @return {*}
+     * Replaces dynamic entities for the session
+     * ToDo: Change parameter to adjust to addDynamicEntityTypes()
+     * @param dynamicEntityTypes
      */
-    AlexaSkill.prototype.getSlotConfirmationStatus = function(slotName: string) {
-      return this.$dialog!.getSlotConfirmationStatus(slotName);
-    };
-
-    /**
-     * Returns state of dialog
-     * @deprecated Please use this.$alexaSkill.$dialog.getState();
-     * @return {String}
-     */
-    AlexaSkill.prototype.getDialogState = function() {
-      return this.$dialog!.getState();
-    };
-
-    /**
-     * Returns true if dialog is in state COMPLETED
-     * @deprecated Please use this.$alexaSkill.$dialog.isCompleted();
-     * @return {boolean}
-     */
-    AlexaSkill.prototype.isDialogCompleted = function() {
-      return this.$dialog!.isCompleted();
-    };
-
-    /**
-     * Returns true if dialog is in state IN_PROGRESS
-     * @deprecated Please use this.$alexaSkill.$dialog.isInProgress();
-     * @return {boolean}
-     */
-    AlexaSkill.prototype.isDialogInProgress = function() {
-      return this.$dialog!.isInProgress();
-    };
-
-    /**
-     * Returns true if dialog is in state STARTED
-     * @deprecated Please use this.$alexaSkill.$dialog.isStarted();
-     * @return {boolean}
-     */
-    AlexaSkill.prototype.isDialogStarted = function() {
-      return this.$dialog!.hasStarted();
-    };
-
-    /**
-     * Returns if slot is confirmed
-     * @deprecated Please use this.$alexaSkill.$dialog.isSlotConfirmed();
-     * @return {boolean}
-     */
-    AlexaSkill.prototype.isSlotConfirmed = function(slotName: string) {
-      return this.$dialog!.isSlotConfirmed(slotName);
-    };
-
-    /**
-     * Returns if slot is confirmed
-     * @deprecated Please use this.$alexaSkill.$dialog.hasSlotValue(slotName);
-     * @return {boolean}
-     */
-    AlexaSkill.prototype.hasSlotValue = function(slotName: string) {
-      return this.$dialog!.hasSlotValue(slotName);
-    };
-
-    /**
-     * Creates delegate directive. Alexa handles next dialog
-     * step
-     * @deprecated Please use this.$alexaSkill.$dialog.delegate(updatedIntent);
-     * @param {Intent} updatedIntent
-     * @return {AlexaResponse}
-     */
-    AlexaSkill.prototype.dialogDelegate = function(updatedIntent?: Intent) {
-      return this.$dialog!.delegate(updatedIntent);
-    };
-
-    /**
-     * Let alexa ask user for the value of a specific slot
-     * @deprecated Please use this.$alexaSkill.$dialog.elicitSlot(slotToElicit, speech, reprompt, updatedIntent);
-     * @param {string} slotToElicit name of the slot
-     * @param {string} speech
-     * @param {string} reprompt
-     * @param {Intent} updatedIntent
-     * @return {AlexaSkill}
-     */
-    AlexaSkill.prototype.dialogElicitSlot = function(
-      slotToElicit: string,
-      speech: string | AlexaSpeechBuilder,
-      reprompt: string | AlexaSpeechBuilder,
-      updatedIntent?: Intent,
+    AlexaSkill.prototype.replaceDynamicEntities = function(
+      dynamicEntityTypes: DynamicEntityType[] | DynamicEntityType,
     ) {
-      return this.$dialog!.elicitSlot(slotToElicit, speech, reprompt, updatedIntent);
-    };
-
-    /**
-     * Let alexa ask user to confirm slot with yes or no
-     * @deprecated Please use this.$alexaSkill.$dialog.confirmSlot(slotToConfirm, speech, reprompt, updatedIntent);
-     * @param {string} slotToConfirm name of the slot
-     * @param {string} speech
-     * @param {string} reprompt
-     * @param {Intent} updatedIntent
-     * @return {AlexaSkill}
-     */
-    AlexaSkill.prototype.dialogConfirmSlot = function(
-      slotToConfirm: string,
-      speech: string | AlexaSpeechBuilder,
-      reprompt: string | AlexaSpeechBuilder,
-      updatedIntent?: Intent,
-    ) {
-      return this.$dialog!.confirmSlot(slotToConfirm, speech, reprompt, updatedIntent);
-    };
-
-    /**
-     * Asks for intent confirmation
-     * @deprecated Please use this.$alexaSkill.$dialog.confirmIntent(speech, reprompt, updatedIntent);
-     * @param {string} speech
-     * @param {string} reprompt
-     * @param {Intent} updatedIntent
-     * @return {AlexaSkill}
-     */
-    AlexaSkill.prototype.dialogConfirmIntent = function(
-      speech: string | AlexaSpeechBuilder,
-      reprompt: string | AlexaSpeechBuilder,
-      updatedIntent?: Intent,
-    ) {
-      return this.$dialog!.confirmIntent(speech, reprompt, updatedIntent);
+      if (!Array.isArray(dynamicEntityTypes)) {
+        dynamicEntityTypes = [dynamicEntityTypes];
+      }
+      return this.addDynamicEntityTypes(dynamicEntityTypes);
     };
   }
   uninstall(alexa: Alexa) {}

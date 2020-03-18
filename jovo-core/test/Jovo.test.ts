@@ -1,4 +1,5 @@
 import {
+  AudioData,
   BaseApp,
   EnumRequestType,
   Host,
@@ -14,6 +15,10 @@ import {
 process.env.NODE_ENV = 'UNIT_TEST';
 
 class JovoImpl extends Jovo {
+  getAudioData(): AudioData | undefined {
+    return undefined;
+  }
+
   /**
    * getDeviceId() dummy implementation
    */

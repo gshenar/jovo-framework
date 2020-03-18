@@ -1,4 +1,5 @@
-import i18n from 'i18next';
+import * as i18n from 'i18next';
+
 import { BaseApp, Cms, HandleRequest } from 'jovo-core';
 import _cloneDeep = require('lodash.clonedeep');
 
@@ -35,7 +36,6 @@ describe('ResponsesTable.install()', () => {
     const airtableCMS = new AirtableCMS();
     const responsesTable = new ResponsesTable();
 
-    expect(new Cms().t).toBeUndefined();
     responsesTable.install(airtableCMS);
     expect(new Cms().t).toBeInstanceOf(Function);
   });
@@ -108,6 +108,7 @@ describe('ResponsesTable.parse()', () => {
       name: 'test',
     });
 
+    // @ts-ignore
     i18n.init({
       interpolation: {
         escapeValue: false, // do not escape ssml tags

@@ -183,10 +183,7 @@ export class AplPlugin implements Plugin {
     const output = alexaSkill.$output;
     const response = alexaSkill.$response as AlexaResponse;
 
-    if (
-      (alexaSkill.$request! as AlexaRequest).hasAPLInterface() ||
-      (alexaSkill.$request! as AlexaRequest).hasAPLTInterface()
-    ) {
+    if ((alexaSkill.$request! as AlexaRequest).hasAPLInterface()) {
       if (_get(output, 'Alexa.Apl')) {
         let directives = _get(response, 'response.directives', []);
 

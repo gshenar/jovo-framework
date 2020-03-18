@@ -1,4 +1,6 @@
-export { GoogleAssistant } from './GoogleAssistant';
+import { Config } from './GoogleAssistant';
+
+export { GoogleAssistant, Config } from './GoogleAssistant';
 export { GoogleAssistantTestSuite } from './core/Interfaces';
 export { BasicCard } from './response/BasicCard';
 export { Carousel } from './response/Carousel';
@@ -19,7 +21,7 @@ import { Table } from './response/Table';
 import { List } from './response/List';
 import { MediaResponse } from './modules/MediaResponse';
 import { Updates } from './modules/Updates';
-import { RichResponse } from './core/Interfaces';
+import { OrderUpdateV3, RichResponse } from './core/Interfaces';
 
 import { GoogleAction } from './core/GoogleAction';
 import { Handler } from 'jovo-core';
@@ -31,6 +33,12 @@ export { GoogleActionResponse } from './core/GoogleActionResponse';
 export { GoogleAssistantRequestBuilder } from './core/GoogleAssistantRequestBuilder';
 export { GoogleAssistantResponseBuilder } from './core/GoogleAssistantResponseBuilder';
 import { MediaObject, Item, SimpleResponse } from './core/Interfaces';
+import { Order, ReservationUpdate } from './core/Interfaces';
+import { PaymentParameters, PresentationOptions } from './modules/Transaction';
+import { SkuId } from './modules/Transaction';
+
+import { SessionEntityType } from 'jovo-platform-dialogflow';
+import { EntityOverrideMode } from 'jovo-platform-dialogflow/dist/src/core/Interfaces';
 
 export {
   Transaction,
@@ -41,7 +49,7 @@ export {
   GoogleProvidedOptions,
   OrderUpdate,
 } from './modules/Transaction';
-declare module 'jovo-core/dist/src/Jovo' {
+declare module 'jovo-core/dist/src/core/Jovo' {
   interface Jovo {
     $googleAction?: GoogleAction;
 
@@ -60,7 +68,7 @@ declare module 'jovo-core/dist/src/Jovo' {
   }
 }
 
-declare module 'jovo-core/dist/src/BaseApp' {
+declare module 'jovo-core/dist/src/core/BaseApp' {
   /**
    * Sets alexa handlers
    * @public
@@ -280,7 +288,12 @@ declare module './core/GoogleAction' {
      * @param {array} rowsText
      * @return {GoogleAction} this
      */
-    showSimpleTable(title: string, subtitle: string, columnHeaders: any[], rowsText: any[]): this; // tslint:disable-line
+    showSimpleTable(
+      title: string,
+      subtitle: string,
+      columnHeaders: string[],
+      rowsText: string[][],
+    ): this;
 
     /**
      * Adds table to response
@@ -316,6 +329,15 @@ declare module './core/GoogleAction' {
     richResponse(richResponse: RichResponse): this;
     appendResponse(responseItem: Item): this;
     appendSimpleResponse(simpleResponse: SimpleResponse): this;
+
+    addSessionEntity(
+      name: string,
+      value: string,
+      synonyms: string[],
+      entityOverrideMode?: EntityOverrideMode,
+    ): this;
+    addSessionEntityTypes(sessionEntityTypes: SessionEntityType[]): this;
+    addSessionEntityType(sessionEntityType: SessionEntityType): this;
   }
 }
 
@@ -358,6 +380,10 @@ declare module './core/GoogleAction' {
     $notification?: Notification;
     notification(): Notification | undefined;
   }
+}
+
+export interface AppGoogleAssistantConfig {
+  GoogleAssistant?: Config;
 }
 
 declare module 'jovo-core/dist/src/Interfaces' {
@@ -416,9 +442,19 @@ declare module 'jovo-core/dist/src/Interfaces' {
         proposedOrder: any; // tslint:disable-line
       };
 
-      TransactionRequirementsCheck?: {
+      TransactionRequirementsCheck?: {};
+
+      TransactionDigitalPurchaseRequirementsCheck?: {};
+
+      TransactionOrder?: {
+        order: Order;
+        presentationOptions?: PresentationOptions;
         orderOptions?: OrderOptions;
-        paymentOptions: PaymentOptions;
+        paymentParameters?: PaymentParameters;
+      };
+
+      TransactionOrderUpdate?: {
+        orderUpdate: OrderUpdateV3;
       };
 
       OrderUpdate?: {
@@ -427,7 +463,7 @@ declare module 'jovo-core/dist/src/Interfaces' {
       };
 
       CompletePurchase?: {
-        skuId: string;
+        skuId: SkuId;
       };
 
       HtmlResponse?: {
@@ -444,6 +480,11 @@ declare module 'jovo-core/dist/src/Interfaces' {
 
       RichResponse?: RichResponse;
       ResponseAppender?: Item[];
+
+      SessionEntityTypes?: SessionEntityType[];
     };
   }
+
+  export interface AppPlatformConfig extends AppGoogleAssistantConfig {}
+  export interface ExtensiblePluginConfigs extends AppGoogleAssistantConfig {}
 }
